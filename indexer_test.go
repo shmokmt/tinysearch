@@ -21,6 +21,18 @@ func TestUpdate(t *testing.T) {
 	expected := &Index{
 		Dictionary: map[string]PostingsList{
 			"better": NewPostingsList(NewPosting(2, 1)),
+			"do":     NewPostingsList(NewPosting(0, 0)),
+			"no":     NewPostingsList(NewPosting(1, 2), NewPosting(2, 0)),
+			"quarrel": NewPostingsList(
+				NewPosting(0, 2),
+				NewPosting(1, 0),
+			),
+			"sir": NewPostingsList(NewPosting(0, 3),
+				NewPosting(1, 1, 3),
+				NewPosting(3, 1),
+			),
+			"well": NewPostingsList(NewPosting(3, 0)),
+			"you":  NewPostingsList(NewPosting(0, 1)),
 		},
 		TotalDocsCount: 4,
 	}
