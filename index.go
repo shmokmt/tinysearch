@@ -9,13 +9,13 @@ import (
 	"unicode/utf8"
 )
 
-// 転置インデックス
+// Inverted index
 type Index struct {
 	Dictionary     map[string]PostingsList // 辞書
 	TotalDocsCount int                     // ドキュメントの総数
 }
 
-// NewIndex create a new index.
+// NewIndex create a new index
 func NewIndex() *Index {
 	dict := make(map[string]PostingsList)
 	return &Index{
@@ -24,26 +24,25 @@ func NewIndex() *Index {
 	}
 }
 
-// ドキュメントID
+// DocumentID is the same AUTO_INCREMENT of MySQL
 type DocumentID int64
 
-// ポスティング
+// Posting is an element of PostingsList
 type Posting struct {
 	DocID         DocumentID
 	Positions     []int
 	TermFrequency int
 }
 
-// ポスティングを作成する
 func NewPosting(docID DocumentID, positions ...int) *Posting {
 	return &Posting{docID, positions, len(positions)}
 }
 
+// PostingsList has some Posting. This is obtained as value in Dictionary
 type PostingsList struct {
 	*list.List
 }
 
-// ポスティングリストを作成する処理
 func NewPostingsList(postings ...*Posting) PostingsList {
 	l := list.New()
 	for _, posting := range postings {
@@ -64,10 +63,6 @@ func (pl PostingsList) last() *Posting {
 	return e.Value.(*Posting)
 }
 
-// ポスティングをリストに追加
-// ポスティングリストの最後を取得してドキュメントIDが
-// 一致していなければ、ポスティングを追加
-// 一致していれば、position　を追加
 func (pl PostingsList) Add(new *Posting) {
 	last := pl.last()
 	if last == nil || last.DocID != new.DocID {
