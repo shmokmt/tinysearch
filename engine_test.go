@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"reflect"
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -38,4 +39,22 @@ func Testmain(m *testing.M) {
 
 func TestCreateIndex(t *testing.T) {
 
+}
+
+func TestSearch(t *testing.T)  {
+	engine := NewSearchEngine(testDB)
+	query := "Quarrel, sir."
+	actual, err := engine.Search(query, 5)
+	if err != nil {
+		t.Fatalf("failed searchTopK: %v", err)
+	}
+	expected := []*SearchResult{
+		{3, 1.754887502163469, "test3"},
+		{1, 1.1699250014423126, "test1"},
+	}
+
+	for !reflect.DeepEqual(actual, expected) {
+		t.Fatal("\ngot:\n%v\nwant:\n%v\n", actual, expected)
+	}
+	
 }
