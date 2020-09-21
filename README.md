@@ -1,16 +1,16 @@
 # tinysearch
 
-Tiny full-text search engine
+Tiny full-text search engine for learning
 
-## Installation
+- Go
+- inverted index
+- tf-idf
+- MySQL8.x
 
-```
-go get github.com/shmokmt/tinysearch
-```
+## How to dev
 
-## Hot it works
+## Comparison
 
 ## See Also
 
 - [Go で検索エンジンに入門する本](https://booth.pm/ja/items/1576277)
-- [Bleve](https://blevesearch.com/)
