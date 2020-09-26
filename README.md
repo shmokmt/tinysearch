@@ -9,6 +9,15 @@ Tiny full-text search engine for learning
 
 ## How to dev
 
+```sh
+docker-compose up -d
+make install
+# create index
+tinysearch create testdata/document
+# search by full-text search engine
+tinysearch search "qurrel sir"
+```
+
 ## Comparison
 
 ## See Also
