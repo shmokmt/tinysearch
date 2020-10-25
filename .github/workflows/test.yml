@@ -10,11 +10,11 @@ jobs:
     name: test
     runs-on: ubuntu-20.04
     steps:
-      - name: start MySQL server
-        run: sudo systemctl start mysql.service
-
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Setup the container
+        run: docker-compose up -d
 
       - name: Set up Go 1.15
         uses: actions/setup-go@v2
