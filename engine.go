@@ -2,13 +2,12 @@ package tinysearch
 
 import (
 	"database/sql"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 )
 
-// Engine is type for full-text search engine.
-// This has a directory name of indexes info.
 type Engine struct {
 	tokenizer     *Tokenizer
 	indexer       *Indexer
@@ -17,6 +16,7 @@ type Engine struct {
 }
 
 func NewSearchEngine(db *sql.DB) *Engine {
+
 	tokenizer := NewTokenizer()
 	indexer := NewIndexer(tokenizer)
 	documentStore := NewDocumentStore(db)
@@ -26,13 +26,13 @@ func NewSearchEngine(db *sql.DB) *Engine {
 		current, _ := os.Getwd()
 		path = filepath.Join(current, "_index_data")
 	}
+
 	return &Engine{
 		tokenizer:     tokenizer,
 		indexer:       indexer,
 		documentStore: documentStore,
 		indexDir:      path,
 	}
-
 }
 
 func (e *Engine) AddDocument(title string, reader io.Reader) error {
@@ -50,8 +50,11 @@ func (e *Engine) Flush() error {
 }
 
 func (e *Engine) Search(query string, k int) ([]*SearchResult, error) {
+
 	terms := e.tokenizer.TextToWordSequence(query)
+
 	docs := NewSearcher(e.indexDir).SearchTopK(terms, k)
+
 	results := make([]*SearchResult, 0, k)
 	for _, result := range docs.scoreDocs {
 		title, err := e.documentStore.fetchTitle(result.docID)
@@ -69,4 +72,9 @@ type SearchResult struct {
 	DocID DocumentID
 	Score float64
 	Title string
+}
+
+func (r *SearchResult) String() string {
+	return fmt.Sprintf("{DocID: %v, Score: %v, Title: %v}",
+		r.DocID, r.Score, r.Title)
 }

@@ -10,13 +10,12 @@ import (
 	"unicode/utf8"
 )
 
-// Inverted index
 type Index struct {
-	Dictionary     map[string]PostingsList // 辞書
-	TotalDocsCount int                     // ドキュメントの総数
+	Dictionary     map[string]PostingsList
+	TotalDocsCount int
 }
 
-// NewIndex create a new index
+// NewIndex create a new index.
 func NewIndex() *Index {
 	dict := make(map[string]PostingsList)
 	return &Index{
@@ -25,21 +24,45 @@ func NewIndex() *Index {
 	}
 }
 
-// DocumentID is the same AUTO_INCREMENT of MySQL
+func (idx Index) String() string {
+	var padding int
+	keys := make([]string, 0, len(idx.Dictionary))
+	for k := range idx.Dictionary {
+		l := utf8.RuneCountInString(k)
+		if padding < l {
+			padding = l
+		}
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	strs := make([]string, len(keys))
+	format := "  [%-" + strconv.Itoa(padding) + "s] -> %s"
+	for i, k := range keys {
+		if postingList, ok := idx.Dictionary[k]; ok {
+			strs[i] = fmt.Sprintf(format, k, postingList.String())
+		}
+	}
+	return fmt.Sprintf("total documents : %v\ndictionary:\n%v\n",
+		idx.TotalDocsCount, strings.Join(strs, "\n"))
+}
+
 type DocumentID int64
 
-// Posting is an element of PostingsList
 type Posting struct {
-	DocID         DocumentID
-	Positions     []int
-	TermFrequency int
+	DocID         DocumentID // ドキュメントID
+	Positions     []int      // 用語の出現位置
+	TermFrequency int        // ドキュメント内の用語の出現回数
 }
 
 func NewPosting(docID DocumentID, positions ...int) *Posting {
 	return &Posting{docID, positions, len(positions)}
 }
 
-// PostingsList has some Posting. This is obtained as value in Dictionary
+func (p Posting) String() string {
+	return fmt.Sprintf("(%v,%v,%v)",
+		p.DocID, p.TermFrequency, p.Positions)
+}
+
 type PostingsList struct {
 	*list.List
 }
@@ -64,6 +87,30 @@ func (pl PostingsList) last() *Posting {
 	return e.Value.(*Posting)
 }
 
+func (pl PostingsList) MarshalJSON() ([]byte, error) {
+
+	postings := make([]*Posting, 0, pl.Len())
+
+	for e := pl.Front(); e != nil; e = e.Next() {
+		postings = append(postings, e.Value.(*Posting))
+	}
+	return json.Marshal(postings)
+}
+
+func (pl *PostingsList) UnmarshalJSON(b []byte) error {
+
+	var postings []*Posting
+	if err := json.Unmarshal(b, &postings); err != nil {
+		return err
+	}
+	pl.List = list.New()
+	for _, posting := range postings {
+		pl.add(posting)
+	}
+
+	return nil
+}
+
 func (pl PostingsList) Add(new *Posting) {
 	last := pl.last()
 	if last == nil || last.DocID != new.DocID {
@@ -74,48 +121,6 @@ func (pl PostingsList) Add(new *Posting) {
 	last.TermFrequency++
 }
 
-func (pl PostingsList) MarshalJSON() ([]byte, error) {
-	postings := make([]*Posting, 0, pl.Len())
-	for e := pl.Front(); e != nil; e = e.Next() {
-		postings = append(postings, e.Value.(*Posting))
-	}
-	return json.Marshal(postings)
-}
-
-func (pl PostingsList) UnmarshalJSON(b []byte) error {
-	var postings []*Posting
-	if err := json.Unmarshal(b, &postings); err != nil {
-		return err
-	}
-	pl.List = list.New()
-	for _, posting := range postings {
-		pl.add(posting)
-	}
-	return nil
-}
-
-func (idx Index) String() string {
-	var padding int
-	keys := make([]string, 0, len(idx.Dictionary))
-	for k := range idx.Dictionary {
-		l := utf8.RuneCountInString(k)
-		if padding < l {
-			padding = l
-		}
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	strs := make([]string, len(keys))
-	format := " [%-" + strconv.Itoa(padding) + "s] -> %s"
-	for i, k := range keys {
-		if PostingsList, ok := idx.Dictionary[k]; ok {
-			strs[i] = fmt.Sprintf(format, k, PostingsList.String())
-		}
-	}
-	return fmt.Sprintf("total documents : %v\ndictionary:\n%v\n",
-		idx.TotalDocsCount, strings.Join(strs, "\n"))
-}
-
 func (pl PostingsList) String() string {
 	str := make([]string, 0, pl.Len())
 	for e := pl.Front(); e != nil; e = e.Next() {
@@ -124,12 +129,6 @@ func (pl PostingsList) String() string {
 	return strings.Join(str, "=>")
 }
 
-func (p Posting) String() string {
-	return fmt.Sprintf("(%v, %v, %v)",
-		p.DocID, p.TermFrequency, p.Positions)
-}
-
-// Cursor is type to follow postingsList
 type Cursor struct {
 	postingsList *PostingsList
 	current      *list.Element

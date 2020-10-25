@@ -8,7 +8,6 @@ import (
 	"strconv"
 )
 
-// IndexReader reads infrx from file.
 type IndexReader struct {
 	indexDir      string
 	postingsCache map[string]*PostingsList
@@ -74,5 +73,4 @@ func (r *IndexReader) totalDocCount() int {
 	}
 	r.docCountCache = count
 	return count
-
 }

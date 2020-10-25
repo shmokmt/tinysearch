@@ -11,7 +11,7 @@ func TestSearchTopK(t *testing.T) {
 
 	expected := &TopDocs{2,
 		[]*ScoreDoc{
-			{2, 1.9657842846620868},
+			{3, 1.754887502163469},
 		}}
 	for !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("got: \n%v\nexpected:%v\n", actual, expected)

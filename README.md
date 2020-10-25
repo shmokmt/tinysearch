@@ -11,14 +11,13 @@ Tiny full-text search engine for learning
 
 ```sh
 docker-compose up -d
-make install
+# set env
+export INDEX_DIR_PATH="./testdata/index"
 # create index
-tinysearch create testdata/document
+go run ./cmd/tinysearch/main.go create ./testdata/document
 # search by full-text search engine
-tinysearch search "qurrel sir"
+go run ./cmd/tinysearch/main.go search "qurrel sir"
 ```
-
-## Comparison
 
 ## See Also
 

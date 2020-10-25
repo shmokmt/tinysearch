@@ -6,10 +6,10 @@ import (
 	"sort"
 )
 
-// TopDocs has result of search.
+// searchTopKの検索結果を保持する
 type TopDocs struct {
-	totalHits int
-	scoreDocs []*ScoreDoc
+	totalHits int         // ヒット件数
+	scoreDocs []*ScoreDoc // 検索結果
 }
 
 func (t *TopDocs) String() string {
@@ -17,6 +17,7 @@ func (t *TopDocs) String() string {
 		t.totalHits, t.scoreDocs)
 }
 
+// ドキュメントIDそのドキュメントのスコアを保持する
 type ScoreDoc struct {
 	docID DocumentID
 	score float64
@@ -36,6 +37,7 @@ func NewSearcher(path string) *Searcher {
 }
 
 func (s *Searcher) SearchTopK(query []string, k int) *TopDocs {
+
 	results := s.search(query)
 
 	sort.Slice(results, func(i, j int) bool {
@@ -46,6 +48,7 @@ func (s *Searcher) SearchTopK(query []string, k int) *TopDocs {
 	if len(results) > k {
 		results = results[:k]
 	}
+
 	return &TopDocs{
 		totalHits: total,
 		scoreDocs: results,
@@ -53,41 +56,48 @@ func (s *Searcher) SearchTopK(query []string, k int) *TopDocs {
 }
 
 func (s *Searcher) search(query []string) []*ScoreDoc {
+
 	if s.openCursors(query) == 0 {
 		return []*ScoreDoc{}
 	}
-	c := s.cursors[0]
+
+	c0 := s.cursors[0]
 	cursors := s.cursors[1:]
+
 	docs := make([]*ScoreDoc, 0)
 
-	for !c.Empty() {
+	for !c0.Empty() {
+
 		var nextDocId DocumentID
 
 		for _, cursor := range cursors {
-			if cursor.NextDoc(c.DocId()); cursor.Empty() {
+			if cursor.NextDoc(c0.DocId()); cursor.Empty() {
 				return docs
 			}
-			if cursor.DocId() != c.DocId() {
+			if cursor.DocId() != c0.DocId() {
 				nextDocId = cursor.DocId()
 				break
 			}
 		}
-		if 0 < nextDocId {
-			if c.NextDoc(nextDocId); c.Empty() {
+
+		if nextDocId > 0 {
+			if c0.NextDoc(nextDocId); c0.Empty() {
 				return docs
 			}
 		} else {
 			docs = append(docs, &ScoreDoc{
-				docID: c.DocId(),
+				docID: c0.DocId(),
 				score: s.calcScore(),
 			})
-			c.Next()
+			c0.Next()
 		}
 	}
+
 	return docs
 }
 
 func (s *Searcher) openCursors(query []string) int {
+
 	postings := s.indexReader.postingsLists(query)
 	if len(postings) == 0 {
 		return 0
@@ -103,7 +113,6 @@ func (s *Searcher) openCursors(query []string) int {
 	return len(cursors)
 }
 
-// Calc tf-idf
 func (s *Searcher) calcScore() float64 {
 	var score float64
 	for i := 0; i < len(s.cursors); i++ {
@@ -113,11 +122,10 @@ func (s *Searcher) calcScore() float64 {
 		score += calcTF(termFreq) * calIDF(totalDocCount, docCount)
 	}
 	return score
-
 }
 
 func calcTF(termCount int) float64 {
-	if termCount < 1 {
+	if termCount <= 0 {
 		return 0
 	}
 	return math.Log2(float64(termCount)) + 1
