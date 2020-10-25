@@ -19,7 +19,7 @@ jobs:
 
       - name: Ping to mysql
         run: |
-          until mysqladmin ping -h mysql --silent; do
+          until mysqladmin ping; do
             echo "waiting..."
             sleep 2
           done
