@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: check the mysqladmin
+        run: which mysqladmin
 
       - name: Setup the container
         run: |
