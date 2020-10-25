@@ -16,10 +16,6 @@ jobs:
       - name: Setup the container
         run: |
           docker-compose up -d
-          until mysqladmin ping -h mysql --silent; do
-            echo "waiting..."
-            sleep 2
-          done
 
       - name: Ping to mysql
         run: |
