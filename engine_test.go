@@ -2,9 +2,10 @@ package tinysearch
 
 import (
 	"database/sql"
+	"io/ioutil"
 	"log"
 	"os"
-	"reflect"
+	"strings"
 	"testing"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -17,7 +18,7 @@ func setup() *sql.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = db.Exec("TRUNCATE TABLE documents")
+	_, err = db.Exec(`TRUNCATE TABLE documents`)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,7 +31,7 @@ func setup() *sql.DB {
 	return db
 }
 
-func Testmain(m *testing.M) {
+func TestMain(m *testing.M) {
 	testDB = setup()
 	defer testDB.Close()
 	exitCode := m.Run()
@@ -39,22 +40,57 @@ func Testmain(m *testing.M) {
 
 func TestCreateIndex(t *testing.T) {
 
-}
-
-func TestSearch(t *testing.T)  {
 	engine := NewSearchEngine(testDB)
-	query := "Quarrel, sir."
-	actual, err := engine.Search(query, 5)
-	if err != nil {
-		t.Fatalf("failed searchTopK: %v", err)
+
+	type testDoc struct {
+		title string
+		body  string
 	}
-	expected := []*SearchResult{
-		{3, 1.754887502163469, "test3"},
-		{1, 1.1699250014423126, "test1"},
+	docs := []testDoc{
+		{"test1", "Do you quarrel, sir?"},
+		{"test2", "No better."},
+		{"test3", "Quarrel sir! no, sir!"},
+	}
+	for _, doc := range docs {
+		r := strings.NewReader(doc.body)
+		if err := engine.AddDocument(doc.title, r); err != nil {
+			t.Fatalf("failed to add document %s: %v", doc.title, err)
+		}
+	}
+	if err := engine.Flush(); err != nil {
+		t.Fatalf("failed to save index to file :%v", err)
 	}
 
-	for !reflect.DeepEqual(actual, expected) {
-		t.Fatal("\ngot:\n%v\nwant:\n%v\n", actual, expected)
+	type testCase struct {
+		file        string
+		postingsStr string
 	}
-	
+	testCases := []testCase{
+		{"testdata/index/_0.dc", "3"},
+		{"testdata/index/better", `[{"DocID":2,"Positions":[1],"TermFrequency":1}]`},
+		{"testdata/index/no", `[{"DocID":2,"Positions":[0],"TermFrequency":1},{"DocID":3,"Positions":[2],"TermFrequency":1}]`},
+		{"testdata/index/do", `[{"DocID":1,"Positions":[0],"TermFrequency":1}]`},
+		{"testdata/index/quarrel", `[{"DocID":1,"Positions":[2],"TermFrequency":1},{"DocID":3,"Positions":[0],"TermFrequency":1}]`},
+		{"testdata/index/sir", `[{"DocID":1,"Positions":[3],"TermFrequency":1},{"DocID":3,"Positions":[1,3],"TermFrequency":2}]`},
+		{"testdata/index/you", `[{"DocID":1,"Positions":[1],"TermFrequency":1}]`},
+	}
+
+	for _, testCase := range testCases {
+		func() {
+			file, err := os.Open(testCase.file)
+			if err != nil {
+				t.Fatalf("failed to load index: %v", err)
+			}
+			defer file.Close()
+			bytes, err := ioutil.ReadAll(file)
+			if err != nil {
+				t.Fatalf("failed to load index: %v", err)
+			}
+			got := string(bytes)
+			want := testCase.postingsStr
+			if got != want {
+				t.Errorf("got : %v\nwant: %v\n", got, want)
+			}
+		}()
+	}
 }

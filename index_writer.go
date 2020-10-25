@@ -9,7 +9,6 @@ import (
 	"strconv"
 )
 
-// IndexWriter writes index info.
 type IndexWriter struct {
 	indexDir string
 }
@@ -27,11 +26,13 @@ func (w *IndexWriter) Flush(index *Index) error {
 	return w.docCount(index.TotalDocsCount)
 }
 
-func (w *IndexWriter) postingsList(term string, list PostingsList) error {
-	bytes, err := json.Marshal(list)
+func (w *IndexWriter) postingsList(term string, postingsList PostingsList) error {
+
+	bytes, err := json.Marshal(postingsList)
 	if err != nil {
 		return err
 	}
+
 	filename := filepath.Join(w.indexDir, term)
 	file, err := os.Create(filename)
 	if err != nil {

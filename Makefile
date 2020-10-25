@@ -16,7 +16,6 @@ devel-deps:
 
 .PHONY: test
 test: deps
-	docker-compose up -d
 	go test -v -cover
 
 .PHONY: lint

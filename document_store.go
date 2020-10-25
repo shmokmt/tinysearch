@@ -2,7 +2,6 @@ package tinysearch
 
 import "database/sql"
 
-// DocumentStore is a connector of MySQL.
 type DocumentStore struct {
 	db *sql.DB
 }
