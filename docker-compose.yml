@@ -7,6 +7,7 @@ services:
     ports:
       - "3306:3306"
     restart: always
+    hostname: mysql
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     volumes:
