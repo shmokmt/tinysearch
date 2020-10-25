@@ -1,5 +1,7 @@
 # tinysearch
 
+![reviewdog](https://github.com/shmokmt/tinysearch/workflows/reviewdog/badge.svg)
+
 Tiny full-text search engine for learning
 
 - Go
