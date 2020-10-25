@@ -1,0 +1,33 @@
+name: Test
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-20.04
+    steps:
+      - name: start MySQL server
+        run: sudo systemctl start mysql.service
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Go 1.15
+        uses: actions/setup-go@v2
+        with:
+          go-version: "1.15"
+
+      - name: restore cache
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            go-
+      - name: go test
+        run: |
+          go test ./...
